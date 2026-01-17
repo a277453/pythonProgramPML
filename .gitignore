@@ -5,6 +5,9 @@
 desktop.ini
 .gitignoreFolder*/
 
+# Jupyter Notebook
+.ipynb_checkpoints
+
 # --- Python Environment & Cache ---
 __pycache__/
 *.py[cod]
