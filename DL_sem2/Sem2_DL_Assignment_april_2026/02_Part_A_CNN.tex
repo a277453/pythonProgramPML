@@ -1,0 +1,147 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{graphicx}
+\geometry{a4paper, margin=1in}
+
+\title{ePGD DL \& GENAI: Assignment (Apr 2026)}
+\author{Sem II - Ashish Trivedi}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Part A: CNN (Image classification) on CIFAR-100 dataset}
+
+\subsection*{Problem Description}
+Compare the efficiency of convolutional neural network (CNN) architectures trained from scratch and using transfer learning techniques.
+
+\subsection*{Dataset Reference}
+The CIFAR-100 dataset consists of 100 object classes. Each input sample is a $32 \times 32$ RGB image, and the model output is a categorical label corresponding to one of the 100 object categories. The dataset contains 50,000 training images and 10,000 test images.
+
+\section*{Methodology}
+
+\begin{enumerate}
+    \item \textbf{From Scratch CNN:} Clearly describe the architecture, including the number of convolutional layers, kernel sizes, activation functions, and pooling operations. Train the model and report the training and validation accuracy. Comment on the convergence behavior and overall performance.
+    \item \textbf{Inject Gaussian noise in testing data and check robustness.}
+    \item \textbf{Retrain model with noisy train data part and re-test based on step \#2.}
+    \item \textbf{Use pre-trained VGG model and apply transfer learning.}
+    \item \textbf{Evaluate performance of VGG based model on noisy test data (without pre-training) and compare with CNN Trained from scratch.}
+\end{enumerate}
+
+\section*{Model Evaluations and Observations}
+
+\subsection*{1. Model A1: CNN Trained from Scratch}
+
+\begin{itemize}
+    \item \textbf{Classification Performance:} The CNN trained from scratch (A1) achieved a final clean test accuracy of \textbf{49\%}. This indicates its ability to learn features directly from the CIFAR-100 dataset.
+    \item \textbf{Robustness to Noise:} When additive Gaussian noise (variance = 0.05, 50\% injection rate) was introduced into the test data, the accuracy dropped significantly to \textbf{29.55\%}. This substantial drop highlights the model's brittleness and lack of robustness to even moderate noise.
+\end{itemize}
+
+\subsubsection*{Challenges \& Addressing}
+\begin{itemize}
+    \item \textbf{Overfitting to Clean Data:} The primary challenge was the model's sensitivity to input variations. It learned specific pixel patterns rather than generalized features, leading to poor performance on noisy data. This was evident from the large accuracy drop.
+    \item \textbf{Addressing:} While A1 was trained solely on clean data, the subsequent experiment (A3) aimed to address this by introducing noise during training.
+\end{itemize}
+
+\subsection*{2. Model A3: CNN with Noise Augmentation during Training}
+
+\begin{itemize}
+    \item \textbf{Classification Performance:} Training with noise augmentation (A3) resulted in a clean test accuracy of \textbf{34.32\%}. This is slightly lower than A1's clean accuracy.
+    \item \textbf{Robustness to Noise:} Crucially, its accuracy on the noisy test set was \textbf{31.08\%}. Compared to A1's noisy accuracy, A3 demonstrated improved robustness, with a smaller drop in performance from its clean accuracy.
+\end{itemize}
+
+\subsubsection*{Challenges \& Addressing}
+\begin{itemize}
+    \item \textbf{Balancing Clean vs. Noisy Performance:} A challenge was finding the right balance for noise injection during training. Too much noise might degrade performance on clean data, while too little might not sufficiently improve robustness. The chosen noise parameters (0.05 std, 30\% probability) provided a compromise.
+    \item \textbf{Addressing:} Including \texttt{AddGaussianNoise} directly into the \texttt{transform\_train} pipeline ensured the model learned to be invariant to these noise patterns.
+\end{itemize}
+
+\subsection*{3. Model A4: VGG16-based with Transfer Learning (Fixed Feature Extractor)}
+
+\begin{itemize}
+    \item \textbf{Classification Performance:} The VGG16-based model (A4) achieved a clean test accuracy of \textbf{28.77\%}. This performance is lower than the CNN trained from scratch (A1).
+    \item \textbf{Robustness to Noise:} The robustness was extremely poor, with an accuracy of \textbf{1.92\%} on the noisy test set. This was significantly worse than both A1 and A3 under noisy conditions.
+\end{itemize}
+
+\subsubsection*{Challenges \& Addressing}
+\begin{itemize}
+    \item \textbf{Domain Mismatch:} The primary challenge was the domain mismatch between ImageNet (on which VGG16 was pre-trained) and CIFAR-100. While VGG16's early layers capture general features, the CIFAR-100 images are much smaller (32x32) and were resized to 224x224, potentially introducing interpolation artifacts and features less relevant to natural images.
+    \item \textbf{Fixed Feature Extractor Limitation:} Freezing the VGG16 feature extractor meant the model couldn't adapt its low-level feature extraction to the specific characteristics of CIFAR-100, which are quite different from ImageNet images, especially at the smaller scale. The new classifier alone was insufficient to bridge this gap effectively.
+    \item \textbf{Normalization:} VGG16 uses ImageNet-specific normalization. While we applied this, adding Gaussian noise on top might have pushed the pixel values outside the effective range that the pre-trained feature extractor was optimized for.
+\end{itemize}
+
+\section*{Comparative Analysis}
+
+\subsection*{Classification Performance (Clean Data)}
+\begin{itemize}
+    \item \textbf{A1 (Scratch CNN):} Highest (approx.~49.00\%)
+    \item \textbf{A3 (Noise Augmentation):} Moderate (approx.~34.32\%)
+    \item \textbf{A4 (VGG16-based):} Lowest (approx.~28.77\%)
+\end{itemize}
+
+% Optional Figure for Clean Accuracies
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{Accuracy comparision.png}
+    \caption{Comparision of accuracies of A1, A2, and A3 steps.}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsection*{Robustness to Noise}
+\begin{itemize}
+    \item \textbf{A3 (Noise Augmentation):} Best (approx.~31.08\% noisy accuracy, only 1.4\% drop from its clean accuracy)
+    \item \textbf{A1 (Scratch CNN):} Moderate (approx.~29.55\% noisy accuracy, a large drop from its clean accuracy)
+    \item \textbf{A4 (VGG16-based):} Very poor (approx.~1.92\% noisy accuracy)
+\end{itemize}
+
+\section*{A5: Robustness Comparison}
+
+We compare the robustness of the three models under the same noisy conditions (additive Gaussian noise with variance 0.05 applied to 50\% of test images):
+
+\begin{table}[htbp]
+\centering
+\caption{Model Performance and Robustness Comparison}
+\label{tab:model_robustness}
+\begin{tabular}{lllll}
+\toprule
+Model & Clean Test Accuracy & Noisy Test Accuracy & Drop\% \\
+\midrule
+A1 (Scratch CNN) & 48.56\% & 29.40\% & 19\% \\
+A3 (Scratch CNN w/ Noise Augmentation) & 34.81\% & 33.41\% & \textbf{1.4\%} \\
+A4 (VGG16-based, Fixed Features) & 28.76\% & \textbf{1.92\%} & \textit{26.84\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Optional Figure for Model Comparison
+\begin{figure}[htbp]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{robustness_plot.png}
+    \caption{Robustness comparison plot.}
+    \label{fig:robustness_plot}
+\end{figure}
+
+\subsection*{Computational Efficiency (Parameter Count)}
+\begin{itemize}
+    \item \textbf{A1 (Scratch CNN):} Most efficient in terms of trainable parameters (4.67 million trainable parameters).
+    \item \textbf{A4 (VGG16-based):} Least efficient due to the large VGG16 base model (12.90 million trainable parameters, and 27.61 million total parameters).
+    \item \textbf{A3 (Noise Augmentation):} Same as A1, 4.67 million trainable parameters.
+\end{itemize}
+
+\section*{Conclusion}
+
+Based on these experiments:
+\begin{itemize}
+    \item \textbf{For pure classification performance on clean data, Model A1 (Scratch CNN) is the best.}
+    \item \textbf{For robustness to noise, Model A3 (Scratch CNN with Noise Augmentation) is clearly superior.} While its clean accuracy is lower than A1, its ability to maintain performance under noisy conditions is a significant advantage.
+    \item \textbf{Model A4 (VGG16-based transfer learning with fixed features) performed poorly across the board for this specific CIFAR-100 task.} The domain mismatch and fixed feature extraction likely prevented it from leveraging the pre-trained knowledge effectively, and it showed a complete lack of robustness to noise.
+\end{itemize}
+
+\subsection*{Best Trade-off}
+The \textbf{CNN trained from scratch with noise augmentation (Model A3)} offers the best trade-off between efficiency and performance in a noisy environment. Although its clean accuracy is not the highest, its robustness makes it a more practical choice for real-world scenarios where input data might be corrupted. If only clean data is expected, A1 would be preferred, but A3 demonstrates a more balanced approach to real-world data imperfections.
+
+\end{document}

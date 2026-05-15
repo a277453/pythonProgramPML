@@ -1,0 +1,129 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{ePGD DL \& GENAI: Assignment (Apr 2026)}
+\author{Sem II - Ashish Trivedi}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Part B: Recurrent Neural Networks (Sentiment Classification)}
+
+\subsection*{Dataset Information}
+\textbf{Source:} IMDB Large Movie Review Dataset \footnote{\url{https://ai.stanford.edu/~amaas/data/sentiment/}}
+
+\subsection*{Problem Description}
+Consider the task of sentiment classification using a standard natural language processing dataset. The objective of this part is to study and compare the effectiveness of different recurrent neural network architectures, namely vanilla recurrent neural networks (RNNs), long short-term memory networks (LSTMs), and attention-augmented variants, for binary sentiment classification.
+
+Use the IMDB Large Movie Review Dataset, which consists of English movie reviews annotated with binary sentiment labels (positive or negative). Each input sample is a sequence of tokens corresponding to a review, and the model output is a single sentiment label.
+
+\section{B1: Data Loading and Preprocessing}
+
+\subsection*{Data Acquisition}
+The \texttt{aclImdb\_v1.tar.gz} dataset was downloaded from Stanford's website and extracted to the local environment. This dataset contains 50,000 movie reviews, evenly split between positive and negative sentiments (25,000 training, 25,000 testing).
+
+\subsection*{Data Loading}
+Custom functions were used to load the positive and negative review text files into pandas DataFrames, \texttt{train\_df} and \texttt{test\_df}, each with \texttt{text} and \texttt{label} columns.
+
+\subsection*{Text Preprocessing}
+A \texttt{preprocess\_text} function was defined and applied to all review texts. This function performed the following critical steps:
+\begin{itemize}
+    \item \textbf{Normalization:} Converted text to lowercase and removed HTML tags and punctuation.
+    \item \textbf{Tokenization:} Broke down the text into individual words (tokens).
+    \item \textbf{Redundancy Reduction \& Stop-word Removal:} Applied lemmatization to reduce words to their base form and removed common English stop words (e.g., 'the', 'is', 'a') to focus on more meaningful terms.
+\end{itemize}
+
+\subsection*{Summary}
+This section focused on preparing the IMDB movie review dataset for sentiment classification. This preprocessing ensures that the text data is clean, consistent, and ready for numerical representation in subsequent modeling steps.
+
+\section{B2: Token Mapping and Embedding Preparation}
+
+\subsection*{Data Splitting}
+The initial \texttt{train\_df} was further split into training and validation sets (80/20 ratio) to monitor model performance during training and prevent overfitting. The \texttt{test\_df} was kept separate for final evaluation.
+
+\subsection*{Vocabulary Construction \& Tokenization}
+\begin{itemize}
+    \item A \texttt{Tokenizer} from Keras was fitted on all processed text (train, validation, and test) to build a comprehensive vocabulary.
+    \item An \texttt{<unk>} token was used to handle out-of-vocabulary words.
+    \item The total vocabulary size identified was 203,436 unique tokens.
+    \item All text reviews were converted into integer sequences based on this tokenizer.
+\end{itemize}
+
+\subsection*{Sequence Padding}
+The maximum sequence length observed was 1420, with an average of 118 words per review. A fixed sequence length of 250 was chosen for padding, meaning reviews longer than 250 tokens were truncated, and shorter ones were padded with zeros. This results in padded input arrays like \texttt{X\_train\_padded} with shape (20000, 250).
+
+\subsection*{Embedding Preparations}
+\begin{itemize}
+    \item \textbf{One-Hot Encoding (Conceptual):} Explained as a high-dimensional, sparse representation, generally not practical for direct use in RNNs.
+    \item \textbf{Word2Vec Embeddings:} A Word2Vec model was trained directly on the processed text corpus, resulting in an embedding dimension of 100. An \texttt{embedding\_matrix\_w2v} of shape (203436, 100) was created, mapping each word in our vocabulary to its Word2Vec vector.
+    \item \textbf{GloVe Embeddings:} The pre-trained GloVe \texttt{glove.6B.100d.txt} embeddings were downloaded and loaded. An \texttt{embedding\_matrix\_glove} of shape (203436, 100) was constructed, aligning GloVe vectors with our vocabulary. Words not found in GloVe were zero-initialized.
+\end{itemize}
+
+\section{B3: Construct Vanilla Recurrent Neural Network (RNN)}
+
+\subsection*{Define Hyperparameters}
+We define the number of recurrent layers ($L=2$) and the hidden dimension $h=128$ for the model.
+
+\subsection*{Model Architecture}
+\begin{itemize}
+    \item \textbf{Embedding Layer:} Converts integer-encoded words into dense, fixed-size vectors. Initialized with our pre-trained \texttt{embedding\_matrix\_w2v}. We set \texttt{trainable=False} to keep them fixed during training.
+    \item \textbf{SimpleRNN Layer:} The core recurrent component. Processes sequences one element at a time, maintaining an internal hidden state. The value $h=128$ determines the dimensionality of the hidden state.
+    \item \textbf{Dense Output Layer:} A single unit with \texttt{sigmoid} activation function to output a probability between 0 and 1.
+\end{itemize}
+
+\section{B4: Train the RNN Model}
+The model was compiled with the \texttt{adam} optimizer and \texttt{binary\_crossentropy} loss function. Training was run for 5 epochs with a batch size of 32.
+
+\section{B5: Construct and Train the LSTM Model}
+An LSTM model was constructed with similar hyperparameters, replacing the SimpleRNN with LSTM layers. The LSTM uses internal mechanisms (gates) to regulate the flow of information, effectively mitigating the vanishing gradient problem.
+
+\section{B6: Attention-Augmented LSTM Model}
+The model builds upon the LSTM architecture by incorporating an attention mechanism. The attention layer dynamically learns to weigh the importance of different hidden states produced by the Bidirectional LSTM, allowing the model to focus on the most relevant parts of the text for sentiment classification.
+
+\section{B7 Comparative Analysis: Models vs. Embedding Parameters and Performance}
+\begin{table}[htbp]
+\centering
+\caption{Model Performance and Parameter Comparison}
+\label{tab:model_comparison}
+\begin{tabular}{llllllll}
+\toprule
+Model Type & ** E.T. & ** L & Test Accuracy & Test Loss & Total Params & Trainable Params \\
+\midrule
+Vanilla RNN & Word2Vec & 2 & 54.32 \%  & 68.87 \%  & 20,405,937 & 62,337 \\
+LSTM & Word2Vec & 2 & 84.98\% & 38.08\% & 20,592,561 & 248,961 \\
+LSTM & GloVe & 2 & 60.52\% & 68.26\% & 20,592,561 & 248,961 \\
+Atten.-Aug. LSTM & Word2Vec & 2 & 87.79\% & 30.17\% & 20,972,850 & 629,250 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+** E.T. - Embedding Type
+
+** L - Layers
+\subsection*{Overall Conclusions:}
+
+
+\begin{enumerate}
+\item \textbf{Vanilla RNN's Limitations:} The basic $SimpleRNN$ model struggles significantly with long-range dependencies, resulting in accuracy barely above random chance. This reinforces the theoretical understanding of vanishing gradients in simpler RNN architectures.
+
+\item \textbf{LSTM's Superiority:} Replacing `SimpleRNN` with `LSTM` layers dramatically improves performance. The LSTM's gated memory cells effectively address the vanishing gradient problem, enabling the model to retain crucial information over extended sequences. The LSTM with Word2Vec embeddings achieved a strong accuracy of ~85%.
+
+\item \textbf{Embedding Choice Matters:} While both Word2Vec (trained on IMDB) and GloVe (general-purpose) are popular pre-trained embeddings, the Word2Vec embeddings (derived from the specific IMDB dataset) yielded substantially better results for the LSTM model. This highlights the importance of domain-specific embeddings or fine-tuning general embeddings for the target task.
+
+\item \textbf{Attention Mechanism's Impact:} The addition of an attention mechanism to the Bidirectional LSTM model further boosted performance, achieving the highest accuracy of ~88%. Attention allows the model to dynamically weigh the importance of different words or phrases in a review, focusing on the most sentiment-bearing tokens, thus providing a more nuanced understanding and prediction.
+
+\item \textbf{Parameter Analysis:}
+    *   The vast majority of 'Total Parameters' for all models come from the non-trainable embedding layer, reflecting the size of the vocabulary and embedding dimension.
+    *   'Trainable Parameters' increase with model complexity: Vanilla RNN < LSTM < Attention-Augmented LSTM. This correlation generally aligns with the observed performance improvements, as more complex models have a greater capacity to learn intricate patterns.
+\end{enumerate}
+
+\subsubsection*{Final Recommendation:} 
+For sentiment classification on this dataset, the \textbf{Attention-Augmented Bidirectional LSTM with Word2Vec embeddings} offers the best balance of model complexity and performance, effectively addressing the challenges of long-range dependencies and enhancing the model's interpretability by focusing on critical sentiment cues.
+
+\end{document}

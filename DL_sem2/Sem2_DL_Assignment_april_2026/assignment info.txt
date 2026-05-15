@@ -1,0 +1,21 @@
+Deep Learning and GenAI		DL & GenAI Graded Assignment 1
+Due Date:	03 May 26 11:55 PM		Total Marks:	120
+Submission Type:	File Upload		Total Marks: 120 (Will be scaled down later)
+
+
+Assignment Details:
+
+Assignment File - epgd_assgmt_1.pdf
+
+Instructions:
+
+Attempt all questions.
+Clearly explain all steps in your model design: data processing, model architecture, objective function, hyperparameters, optimization, and evaluation.
+Support your approach with results, plots, and brief analysis wherever applicable.
+You may use AI tools and collaborate, but ensure you fully understand your work.
+Submission:
+
+Colab Notebook
+LaTeX Report (5–10 pages)
+Regards
+Program Office 

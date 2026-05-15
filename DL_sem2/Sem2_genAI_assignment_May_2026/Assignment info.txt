@@ -1,0 +1,21 @@
+DL & GenAI Graded Assignment 2		Due Date:	12 May 26 11:55 PM
+Total Marks:	80		Submission Type:	File Upload
+
+Assignment Details:
+
+Total Marks:  80
+
+
+Assignment File - epgd_assgmt-2.pdf (C:\Users\Ashish\Downloads\epgd_assgmt-2.pdf)
+
+Submission Type: Colab Notebook
+
+Instructions: Your submission should include:
+
+ * Colab Notebook 
+ * Model architecture summary 
+ * Training and testing results 
+ * plots of loss/accuracy 
+ * Brief explanation of each implemented component
+Note: No need to make report for this assignment. You can show analysis in colab notebook itself.
+
